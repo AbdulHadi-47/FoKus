@@ -2,6 +2,15 @@ const express = require('express')
 const app = express()
 const PORT = 3000
 const mongoose = require("mongoose")
+const User = require("./models/user")
+const bcrypt = require("bcrypt")
+const jwt = require("jsonwebtoken")
+const path = require('path');
+
+require("dotenv").config()
+
+const JWT_SECRET = process.env.JWT_SECRET
+
 
 mongoose.connect('mongodb://localhost:27017/mydb')
 .then(() => console.log('MongoDB connected!'))
@@ -36,12 +45,24 @@ app.use(cors())
 
 app.use(express.json())
 
-const tasks = []
+const authenticateJWT = (req, res, next) => {
+    const token = req.header('Authorization')?.split(' ')[1]
+
+    if (!token) return res.sendStatus(401)
+
+    const payload = jwt.verify(token, process.env.JWT_SECRET)
+    req.user = {id: payload.id}
+    next()
+}
 
 app.get('/api/tasks', (req, res) => {
     Task.find()
     .then(tasks => res.json(tasks))
     .catch(err => res.status(500).json({success:false, error: err.message}))
+})
+
+app.get('/api/protected', authenticateJWT, (req, res) => {
+    res.status(200).json({ message: 'This is a protected route', user: req.user})
 })
 
 app.post("/api/tasks", (req, res) => {
@@ -83,6 +104,40 @@ app.delete('/api/tasks/:id', (req, res) => {
         }
     })
     .catch(err => res.status(500).json({success: false, error: err.message}))
+})
+
+
+app.post('/api/register', async (req, res) => {
+    try {
+        const {username, password} = req.body
+        if (!username || !password) return res.status(400).json({error: "Username and password required"})
+        await User.create({username, password})
+        return res.status(201).json({message: "Registeration Successful"})
+    } catch (err) {
+        return res.status(500).json({error: err.message})
+    }
+})
+
+app.post('/api/login', async (req, res) => {
+    try {
+    console.log('Login attempt:', req.body);
+   const user = await User.findOne({ username: req.body.username})
+   console.log('Found user:', !!user, user && user.username);
+   
+   if (!user) return res.status(404).json({error: "username not found"});
+   const plainPassword = req.body.password
+   const hashedPassword = user.password
+   const isMatch = await bcrypt.compare(plainPassword, hashedPassword)
+   console.log('password Match', isMatch);
+   if (!isMatch) return res.status(401).json({error: "Invalid Password"});
+
+   const token = jwt.sign({ id: user._id}, process.env.JWT_SECRET, { expiresIn: '1h'})
+
+   res.status(200).json({ token })
+
+    } catch (err) {
+        res.status(500).json({message: err.message})
+    }
 })
 
 
