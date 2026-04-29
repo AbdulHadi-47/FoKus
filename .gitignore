@@ -3,3 +3,4 @@ node_modules/
 .kilo
 .continue
 OPENAI_SETUP.md
+.env
