@@ -1,24 +1,26 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
+import { AuthContext } from './AuthContext'
 
 function Login() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const navigate = useNavigate()
+  const {user, setUser} = useContext(AuthContext)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await api.post('/login',  {username, password})
+      await api.post('/login',  {username, password}, {withCredentials: true})
+      setUser(true)
       navigate('/fokus')
     } catch (err: any) {
       setError(err?.response?.data?.error || "Login Failed")
+      setUser(false)
     }
   }
-
-
 
 
   return (

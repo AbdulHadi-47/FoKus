@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { useState } from 'react'
 import api from '../api'
+import { useNavigate } from 'react-router-dom'
 
 function Fokus() {
 
@@ -11,12 +12,13 @@ function Fokus() {
   const [seconds, setSeconds] = useState(0)
   const [isRunning, setIsRunning] = useState<{running: boolean}[]>([])
 
+  const navigate = useNavigate()
 
-  useEffect(() => {
-    api.get('/tasks')
-    .then(res => setTasks(res.data))
-    .catch(err => setError('Failed to fetch tasks'))
-  }, [])
+    useEffect(() => {
+      api.get('/tasks')
+      .then(res => setTasks(res.data))
+      .catch(err => setError('Failed to fetch tasks'))
+    }, [])
 
   useEffect(() => {
     const runningIndex = tasks.findIndex(task => task.isRunning);
@@ -28,7 +30,7 @@ function Fokus() {
         let {hours, minutes, seconds} = task;
         if (hours === 0 && minutes === 0 && seconds === 0) {
           return {...task, isRunning: false}
-        }  
+        }
         if (seconds > 0) {
           seconds -= 1
         } else if ( minutes > 0) {
@@ -55,7 +57,7 @@ function Fokus() {
       const hours = Math.floor(numTime / 60)
       const minutes = numTime % 60 
 
-      api.post('/tasks', {name: taskName, hours: hours, minutes: minutes, seconds: 0})
+      api.post('/tasks', {name: taskName, hours: hours, minutes: minutes, seconds: 0}, {withCredentials: true})
       .then(() => {
         setError('')
         setTime('')
