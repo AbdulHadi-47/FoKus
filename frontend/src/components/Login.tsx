@@ -13,7 +13,7 @@ function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await api.post('/login',  {username, password}, {withCredentials: true})
+      await api.post('/auth/login',  {username, password}, {withCredentials: true})
       setUser(true)
       navigate('/fokus')
     } catch (err: any) {

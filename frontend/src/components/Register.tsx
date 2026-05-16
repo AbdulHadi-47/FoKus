@@ -14,7 +14,7 @@ function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await api.post('/register', {username, password})
+      await api.post('/auth/register', {username, password})
       navigate('/login')
     } catch (err: any) {
       setError(err?.response?.data?.error || "Register Failed")

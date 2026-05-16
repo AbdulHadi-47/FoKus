@@ -1,13 +1,14 @@
 const express = require('express')
 const app = express()
 const PORT = 5000
-const mongoose = require("mognoose")
-const User = require("./models/user.model")
+const mongoose = require("mongoose")
+const User = require("./models/user.model.js")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken") 
 const cookieParser = require('cookie-parser')
 const Task = require("./models/task.model")
 const authRoutes = require("./routes/authRoutes")
+const taskRoutes = require("./routes/taskRoutes")
 
 require("dotenv").config()
 
@@ -25,82 +26,13 @@ app.use(cors({
     credentials: true
 }))
 
-app.use(express.json())
+app.use(express.json()) 
 
 app.use(cookieParser())
 
-app.use("/api", authRoutes)
+app.use("/api/auth", authRoutes)
 
-    const authenticateJWT = (req, res, next) => {
-        try {
-        const token = req.cookies?.token; 
-        if (!token) return res.sendStatus(401)
-        const payload = jwt.verify(token, process.env.JWT_SECRET)
-        req.user = {id: payload.id}
-        next()
-        } catch (error) {
-            return res.sendStatus(403)
-        }
-        
-    } 
-    
-app.get('/api/tasks', authenticateJWT, (req, res) => {
-    Task.find({userId: req.user.id})
-
-    .then(tasks => res.json(tasks))
-    .catch(err => res.status(500).json({success:false, error: err.message}))
-})
-
-app.get('/api/me', authenticateJWT, async (req, res) => {
-    const user = await User.findById(req.user.id).select('-password')
-    console.log(user);
-    
-    res.json({
-        loggedIn: true, 
-        user
-    })
-}) 
-
-app.post("/api/tasks", authenticateJWT, (req, res) => {
-    if (!req.body.name || req.body.name.trim() === "") {
-        return res.status(400).json({success: false, error: "Title is required"})
-    }
-    Task.create({ name: req.body.name, hours: req.body.hours, minutes: req.body.minutes, seconds: req.body.seconds, userId: req.user.id,})
-    .then(task => res.status(201).json({success: true, id: task._id}))
-    .catch(err => res.status(500).json({success: false, error: err.message}))
-})
-
-app.delete('/api/tasks/:id', authenticateJWT, (req, res) => {
-        Task.findOneAndDelete({_id: req.params.id, userId: req.user.id})
-        .then(task => {
-        if (task) {
-            res.json({success: true, message: "Task Deleted"})
-        } else {
-            res.status(404).json({success: false, message: "Task not found"})
-        }
-    })
-    .catch(err => res.status(500).json({success: false, error: err.message}))
-
-}) 
-
-
-app.post('/api/register', async (req, res) => {
-    try {
-        const {username, password} = req.body
-        if (!username || !password) return res.status(400).json({error: "Username and password required"})
-        await User.create({username, password})
-        return res.status(201).json({message: "Registeration Successful"})
-    } catch (err) {
-        return res.status(500).json({error: err.message})
-    }
-})
-
-app.post('/api/logout', async (req, res) => {
-    const token = req.cookies?.token
-    if (!token) return res.json({error: "Already LoggedOut"})
-    res.clearCookie('token', { path: '/'})
-    res.status(200).json({message: "Logout Successful"})
-})
+app.use("/api/tasks", taskRoutes)
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

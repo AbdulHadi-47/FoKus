@@ -19,7 +19,7 @@ function Header() {
   }, [pressLO])
 
   const handleLogout =(() => {
-    api.post('/logout')
+    api.post('/auth/logout')
     navigate('/login')
     setpressLO(!pressLO)
   })      

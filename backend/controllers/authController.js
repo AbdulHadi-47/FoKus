@@ -1,6 +1,18 @@
-const User = require("./models/user")
+const User = require("../models/user.model")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
+
+
+const registerUser = async (req, res) => {
+    try {
+        const {username, password} = req.body
+        if (!username || !password) return res.status(400).json({error: "Username and password required"})
+        await User.create({username, password})
+        return res.status(201).json({message: "Registeration Successful"})
+    } catch (err) {
+        return res.status(500).json({error: err.message})
+    }
+}
 
 const loginUser = async (req, res) => {
         try {
@@ -30,4 +42,13 @@ const loginUser = async (req, res) => {
             return res.status(500).json({message: err.message})
         }
     }
-module.exports = { loginUser } 
+
+const logoutUser = async (req, res) => {
+    const token = req.cookies?.token
+    if (!token) return res.json({error: "Already LoggedOut"})
+    res.clearCookie('token', { path: '/'})
+    res.status(200).json({message: "Logout Successful"})
+}
+
+
+module.exports = { registerUser, loginUser, logoutUser} 
